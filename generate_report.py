@@ -11,6 +11,10 @@ from reportlab.platypus.flowables import HRFlowable
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.colors import HexColor
 
+# Anonymized display values for public sharing
+HOST_DISPLAY = "web-server-01 (anonymized)"
+ACCOUNT_DISPLAY = "service-account (anonymized)"
+
 def generate_pdf_report(filename="Investigation_PowerShell.pdf"):
     doc = SimpleDocTemplate(
         filename,
@@ -35,14 +39,14 @@ def generate_pdf_report(filename="Investigation_PowerShell.pdf"):
 
     Story.append(Paragraph("1. ALERT SUMMARY", header_style))
     Story.append(Paragraph("<b>Alert Title:</b> Suspicious Process Execution - Encoded PowerShell Spawned by IIS Process", normal_style))
-    Story.append(Paragraph("<b>Severity:</b> High  |  <b>Host:</b> WEB-SRV-01 (lab)  |  <b>Account:</b> svc-webapp", normal_style))
+    Story.append(Paragraph(f"<b>Severity:</b> High  |  <b>Host:</b> {HOST_DISPLAY}  |  <b>Account:</b> {ACCOUNT_DISPLAY}", normal_style))
     Story.append(Spacer(1, 8))
 
     Story.append(Paragraph("2. KQL DETECTION QUERY", header_style))
     kql_query = (
         "DeviceProcessEvents\n"
-        "| where Timestamp > ago(12h) and DeviceName == 'WEB-SRV-01'\n"
-        "| where InitiatingProcessFileName == 'w3wp.exe' and FileName == 'powershell.exe'\n"
+        "| where Timestamp > ago(12h)\n"
+        "| where InitiatingProcessFileName == \"w3wp.exe\" and FileName == \"powershell.exe\"\n"
         "| project Timestamp, DeviceName, AccountName, ProcessId, CommandLine, InitiatingProcessCommandLine"
     )
     Story.append(Preformatted(kql_query, code_style))
@@ -50,11 +54,11 @@ def generate_pdf_report(filename="Investigation_PowerShell.pdf"):
 
     Story.append(Paragraph("3. INCIDENT TIMELINE (UTC)", header_style))
     timeline = [
-        "<b>14:02:11</b> - Inbound web request to /contact/upload.aspx handled by IIS (w3wp.exe).",
-        "<b>14:02:15</b> - w3wp.exe (PID 2104) spawns powershell.exe (PID 4892) under svc-webapp.",
-        "<b>14:02:16</b> - PowerShell executes encoded command string: powershell.exe -EncodedCommand ...",
-        "<b>14:02:18</b> - Encoded payload decodes to script executing whoami /priv.",
-        "<b>14:03:00</b> - High-severity alert generated in Defender for Endpoint."
+        "<b>14:02:11 UTC</b> - Inbound web request to /contact/upload.aspx handled by IIS (w3wp.exe).",
+        "<b>14:02:15 UTC</b> - w3wp.exe (PID 2104) spawns powershell.exe (PID 4892) under service-account (anonymized).",
+        "<b>14:02:16 UTC</b> - PowerShell executes encoded command: powershell.exe -EncodedCommand a3ZyZXE...",
+        "<b>14:02:18 UTC</b> - Encoded payload decodes to script inspecting directory permissions and running whoami /priv.",
+        "<b>14:03:00 UTC</b> - High-severity alert generated in Defender for Endpoint; assigned for triage."
     ]
     for event in timeline:
         Story.append(Paragraph(f"• {event}", normal_style))
@@ -68,8 +72,8 @@ def generate_pdf_report(filename="Investigation_PowerShell.pdf"):
     Story.append(Spacer(1, 8))
 
     Story.append(Paragraph("5. RECOMMENDED ACTIONS & MITRE ATT&CK", header_style))
-    Story.append(Paragraph("1. Perform soft network isolation on WEB-SRV-01 via Defender for Endpoint.", normal_style))
-    Story.append(Paragraph("2. Reset credentials for the svc-webapp account and revoke active sessions.", normal_style))
+    Story.append(Paragraph("1. Perform soft network isolation on the affected host via Defender for Endpoint.", normal_style))
+    Story.append(Paragraph("2. Reset credentials for the service account and revoke active sessions.", normal_style))
     Story.append(Paragraph("3. Coordinate with the web application team to inspect upload logs and patch the endpoint.", normal_style))
     Story.append(Spacer(1, 6))
     Story.append(Paragraph("<b>MITRE Mapping:</b> T1190 | T1059.001 | T1027 | T1033", normal_style))
@@ -86,3 +90,4 @@ if __name__ == "__main__":
     print("[*] Parsing incident data and generating PDF...")
     time.sleep(1)
     generate_pdf_report(output_file)
+
