@@ -1,1 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+.env
+venv/
+.venv/
+
+# Report outputs (remove if you want the PDF committed)
+Investigation_PowerShell.pdf
+
+# Editor files
+.vscode/
+.idea/
+.DS_Store
 
